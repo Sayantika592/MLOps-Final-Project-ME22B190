@@ -41,5 +41,4 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# DVC
-/data/raw/*.csv.dvc
+

@@ -44,7 +44,6 @@ stages:
     outs:
       - models/best_model/model.pkl
       - models/best_model/vectorizer.pkl
-      - models/best_model/metrics.json
     metrics:
       - models/best_model/metrics.json:
           cache: false
