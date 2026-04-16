@@ -1,0 +1,51 @@
+# ============================================================
+# Fake News Detection - Model & Pipeline Configuration
+# ============================================================
+
+data:
+  raw_path: "data/raw/news.csv"
+  processed_path: "data/processed"
+  test_size: 0.2
+  random_state: 42
+
+preprocessing:
+  max_features: 50000
+  ngram_range: [1, 2]
+  min_df: 2
+  max_df: 0.95
+  stop_words: "english"
+
+model:
+  algorithm: "passive_aggressive"   # Options: passive_aggressive, logistic_regression, random_forest
+  hyperparameters:
+    passive_aggressive:
+      max_iter: 50
+      C: 1.0
+      tol: 0.001
+    logistic_regression:
+      max_iter: 1000
+      C: 1.0
+      solver: "lbfgs"
+    random_forest:
+      n_estimators: 100
+      max_depth: 50
+      random_state: 42
+
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "fake-news-detection"
+  model_name: "fake-news-classifier"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  model_path: "models/best_model"
+
+monitoring:
+  drift_threshold: 0.1
+  alert_error_rate: 0.05
+  metrics_port: 8001
+
+frontend:
+  api_url: "http://backend:8000"
+  port: 8501

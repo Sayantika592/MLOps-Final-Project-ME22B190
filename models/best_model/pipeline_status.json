@@ -1,0 +1,99 @@
+{
+  "total_duration": 44.48,
+  "stages": {
+    "data_ingestion": {
+      "status": "completed",
+      "start": 1776368818.2755551,
+      "duration": 0.77,
+      "details": {
+        "rows": 44898,
+        "columns": [
+          "title",
+          "text",
+          "subject",
+          "date",
+          "label"
+        ]
+      }
+    },
+    "baseline_statistics": {
+      "status": "completed",
+      "start": 1776368819.0490277,
+      "duration": 0.05,
+      "details": {
+        "text_length": {
+          "mean": 2469.1096930820972,
+          "std": 2171.6170908337167,
+          "median": 2186.0,
+          "min": 1.0,
+          "max": 51794.0
+        },
+        "title_length": {
+          "mean": 80.11171989843646,
+          "std": 25.379685157014137,
+          "median": 73.0,
+          "min": 8.0,
+          "max": 286.0
+        },
+        "label_distribution": {
+          "1": 0.5229854336496058,
+          "0": 0.47701456635039424
+        }
+      }
+    },
+    "preprocessing": {
+      "status": "completed",
+      "start": 1776368819.1026092,
+      "duration": 8.89,
+      "details": {
+        "rows_after_cleaning": 44889,
+        "features_created": [
+          "content",
+          "text_length",
+          "word_count",
+          "avg_word_length"
+        ]
+      }
+    },
+    "data_split": {
+      "status": "completed",
+      "start": 1776368827.9950454,
+      "duration": 0.03,
+      "details": {
+        "train_size": 35911,
+        "test_size": 8978
+      }
+    },
+    "feature_engineering": {
+      "status": "completed",
+      "start": 1776368828.0218425,
+      "duration": 34.54,
+      "details": {
+        "n_features": 50000,
+        "vectorizer_path": "models/best_model/vectorizer.pkl"
+      }
+    },
+    "model_training": {
+      "status": "completed",
+      "start": 1776368862.559153,
+      "duration": 0.19,
+      "details": {
+        "algorithm": "passive_aggressive",
+        "accuracy": 0.9979950991312097,
+        "f1_score": 0.9979951398084692,
+        "precision": 0.9979955774906459,
+        "recall": 0.9979950991312097
+      }
+    },
+    "model_export": {
+      "status": "completed",
+      "start": 1776368862.7516081,
+      "duration": 0.0,
+      "details": {
+        "model_path": "models/best_model/model.pkl",
+        "metrics_path": "models/best_model/metrics.json"
+      }
+    }
+  },
+  "overall_status": "completed"
+}

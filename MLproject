@@ -1,0 +1,18 @@
+name: fake-news-detection
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      config: {type: str, default: "configs/model_config.yaml"}
+      mlflow: {type: bool, default: true}
+    command: "python src/pipeline/run_pipeline.py --config {config} --mlflow"
+
+  train:
+    parameters:
+      config: {type: str, default: "configs/model_config.yaml"}
+    command: "python src/pipeline/run_pipeline.py --config {config}"
+
+  serve:
+    command: "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
