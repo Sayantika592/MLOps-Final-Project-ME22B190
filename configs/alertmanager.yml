@@ -1,0 +1,84 @@
+# AlertManager Configuration
+# Per A5: Email notifications via webhook + silence for maintenance
+
+global:
+  resolve_timeout: 5m
+  # SMTP configuration for email alerts
+  # Replace with your SMTP settings (Mailtrap, SendGrid, Gmail, etc.)
+  smtp_smarthost: "sandbox.smtp.mailtrap.io:2525"
+  smtp_from: "alerts@fakenews-detector.local"
+  smtp_auth_username: "YOUR_MAILTRAP_USERNAME"
+  smtp_auth_password: "YOUR_MAILTRAP_PASSWORD"
+  smtp_require_tls: true
+
+# -----------------------------------------------------------------------
+# Routes: Define how alerts are grouped and routed
+# -----------------------------------------------------------------------
+route:
+  group_by: ["alertname", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "email-team"
+
+  routes:
+    # Critical alerts go immediately
+    - match:
+        severity: critical
+      receiver: "email-critical"
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts grouped with delay
+    - match:
+        severity: warning
+      receiver: "email-team"
+      group_wait: 1m
+      repeat_interval: 4h
+
+# -----------------------------------------------------------------------
+# Receivers: Email notification targets
+# -----------------------------------------------------------------------
+receivers:
+  - name: "email-team"
+    email_configs:
+      - to: "team@example.com"
+        send_resolved: true
+        headers:
+          Subject: '[FakeNews Alert] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p><b>Status:</b> {{ .Status }}</p>
+          {{ range .Alerts }}
+          <p><b>Severity:</b> {{ .Labels.severity }}</p>
+          <p>{{ .Annotations.description }}</p>
+          <hr>
+          {{ end }}
+
+  - name: "email-critical"
+    email_configs:
+      - to: "team@example.com"
+        send_resolved: true
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
+
+# -----------------------------------------------------------------------
+# Inhibition Rules: Suppress less severe alerts when critical fires
+# -----------------------------------------------------------------------
+inhibit_rules:
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname"]
+
+# -----------------------------------------------------------------------
+# Silence Configuration (A5 requirement: maintenance windows)
+# -----------------------------------------------------------------------
+# Silences are managed via the AlertManager UI at http://localhost:9093/#/silences
+# To create a silence for maintenance:
+#   1. Go to http://localhost:9093/#/silences
+#   2. Click "New Silence"
+#   3. Set matchers (e.g., alertname=HighCPUUsage)
+#   4. Set duration (e.g., 2 hours for maintenance window)
+#   5. Add comment: "Scheduled maintenance window"

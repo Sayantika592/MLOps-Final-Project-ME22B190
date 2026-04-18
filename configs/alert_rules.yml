@@ -1,0 +1,108 @@
+# Prometheus Alerting & Recording Rules
+# Per A5: Failures, Resource Overuse, Anomalies
+
+groups:
+  # -----------------------------------------------------------------------
+  # Recording Rules (pre-compute expensive queries)
+  # -----------------------------------------------------------------------
+  - name: recording_rules
+    rules:
+      - record: prediction:error_rate:5m
+        expr: rate(prediction_errors_total[5m]) / (rate(prediction_requests_total[5m]) + 0.001)
+
+      - record: prediction:latency_p95:5m
+        expr: histogram_quantile(0.95, rate(prediction_latency_seconds_bucket[5m]))
+
+      - record: prediction:request_rate:5m
+        expr: rate(prediction_requests_total[5m])
+
+  # -----------------------------------------------------------------------
+  # Alerting Rules
+  # -----------------------------------------------------------------------
+  - name: failure_alerts
+    rules:
+      # HIGH ERROR RATE: More than 5% errors over 5 minutes
+      - alert: HighErrorRate
+        expr: prediction:error_rate:5m > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High prediction error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # MODEL DOWN: Health endpoint not responding
+      - alert: ModelNotLoaded
+        expr: model_loaded == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML model is not loaded"
+          description: "The backend API model_loaded gauge is 0. Predictions will fail."
+
+      # SERVICE DOWN: No predictions in 10 minutes
+      - alert: NoPredictions
+        expr: rate(prediction_requests_total[10m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No predictions in the last 10 minutes"
+          description: "The API has not received any prediction requests."
+
+  - name: resource_alerts
+    rules:
+      # HIGH CPU: System CPU usage above 80% for 2 minutes
+      - alert: HighCPUUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage exceeds 80%"
+          description: "Average CPU usage is {{ $value | humanize }}%"
+
+      # HIGH MEMORY: System memory usage above 85%
+      - alert: HighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory usage exceeds 85%"
+          description: "Memory usage is {{ $value | humanize }}%"
+
+  - name: anomaly_alerts
+    rules:
+      # LATENCY SPIKE: p95 latency above 500ms
+      - alert: HighLatency
+        expr: prediction:latency_p95:5m > 0.5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prediction latency spike detected"
+          description: "p95 latency is {{ $value | humanizeDuration }} (threshold: 500ms)"
+
+      # DATA DRIFT: Drift score above threshold
+      - alert: DataDriftDetected
+        expr: data_drift_score > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data drift detected"
+          description: "Drift score is {{ $value | humanize }} (threshold: 0.1). Consider retraining."
+
+      # PREDICTION SKEW: One class dominates predictions (>80%)
+      - alert: PredictionSkew
+        expr: >
+          prediction_class_total{class_label="FAKE"}
+          / (prediction_class_total{class_label="FAKE"} + prediction_class_total{class_label="REAL"} + 0.001) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prediction class skew detected"
+          description: "Over 80% of predictions are FAKE, which may indicate drift or adversarial inputs."

@@ -2,9 +2,9 @@ stages:
   data_ingestion:
     cmd: python -c "
       from src.data.ingest import load_data, load_config, compute_baseline_statistics;
-      import json, os;
-      config = load_config();
-      df = load_data(config['data']['raw_path']);
+      import json, os, yaml;
+      params = yaml.safe_load(open('params.yaml'));
+      df = load_data(params['data']['raw_path']);
       stats = compute_baseline_statistics(df);
       os.makedirs('data/processed', exist_ok=True);
       df.to_csv('data/processed/ingested.csv', index=False);
@@ -13,7 +13,8 @@ stages:
     deps:
       - data/raw/news.csv
       - src/data/ingest.py
-      - configs/model_config.yaml
+    params:
+      - data.raw_path
     outs:
       - data/processed/ingested.csv
       - data/processed/baseline_stats.json
@@ -29,6 +30,8 @@ stages:
     deps:
       - data/processed/ingested.csv
       - src/data/preprocess.py
+    params:
+      - preprocessing
     outs:
       - data/processed/preprocessed.csv
 
@@ -41,9 +44,17 @@ stages:
       - src/data/preprocess.py
       - src/model/train.py
       - configs/model_config.yaml
+    params:
+      - model
+      - data.test_size
+      - data.random_state
+      - preprocessing.max_features
+      - preprocessing.ngram_range_min
+      - preprocessing.ngram_range_max
     outs:
       - models/best_model/model.pkl
       - models/best_model/vectorizer.pkl
+      - models/best_model/metrics.json
     metrics:
       - models/best_model/metrics.json:
           cache: false

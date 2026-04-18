@@ -73,16 +73,38 @@ class TestMonitoringEndpoints:
     def test_metrics_endpoint(self):
         """Test that /metrics returns Prometheus format."""
         from src.api.main import app
+        from src.api import main as api_main
+        
+        original_detector = api_main.drift_detector
+        api_main.drift_detector = MagicMock()
+        api_main.drift_detector.compute_drift_score.return_value = {"overall_drift": 0.0}
+        
         client = TestClient(app)
         response = client.get("/metrics")
+        
+        api_main.drift_detector = original_detector
         assert response.status_code == 200
         assert "prediction_requests_total" in response.text
 
     def test_drift_endpoint(self):
         """Test that /drift returns drift information."""
         from src.api.main import app
+        from src.api import main as api_main
+        
+        original_detector = api_main.drift_detector
+        api_main.drift_detector = MagicMock()
+        api_main.drift_detector.compute_drift_score.return_value = {
+            "overall_drift": 0.1, 
+            "alert": False,
+            "features_drift": {},
+            "threshold": 0.1,
+            "samples_analyzed": 100
+        }
+        
         client = TestClient(app)
         response = client.get("/drift")
+        
+        api_main.drift_detector = original_detector
         assert response.status_code == 200
         data = response.json()
         assert "overall_drift" in data

@@ -3,16 +3,18 @@ FastAPI Application
 ===================
 Main API server for the Fake News Detection system.
 Exposes prediction, health, drift, and metrics endpoints.
+Includes container_id in responses for Docker Swarm load-balance tracking (A2).
 """
 
 import os
 import time
+import socket
 import logging
 import pickle
 from contextlib import asynccontextmanager
 
 import yaml
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
@@ -34,6 +36,11 @@ from src.monitoring.metrics import (
     PREDICTION_CONFIDENCE,
     DATA_DRIFT_SCORE,
     ACTIVE_REQUESTS,
+    MODEL_LOADED,
+    MODEL_MEMORY_MB,
+    REQUESTS_BY_SOURCE,
+    INFERENCE_TIME_SUMMARY,
+    TEXT_PROCESSING_TIME,
     get_metrics,
     get_content_type,
 )
@@ -48,6 +55,10 @@ logger = logging.getLogger(__name__)
 predictor: FakeNewsPredictor = None
 drift_detector: DriftDetector = None
 app_config: dict = {}
+
+# Container ID for Docker Swarm load-balance tracking (A2 requirement)
+CONTAINER_ID = socket.gethostname()
+MODEL_VERSION = "1.0.0"
 
 
 def load_config() -> dict:
@@ -74,7 +85,12 @@ def initialize_model(config: dict) -> FakeNewsPredictor:
     with open(vectorizer_file, "rb") as f:
         vectorizer = pickle.load(f)
 
-    logger.info("Model and vectorizer loaded from %s", model_path)
+    # Report model memory usage
+    model_size = os.path.getsize(model_file) / (1024 * 1024)
+    vec_size = os.path.getsize(vectorizer_file) / (1024 * 1024)
+    MODEL_MEMORY_MB.set(round(model_size + vec_size, 2))
+
+    logger.info("Model and vectorizer loaded from %s (%.1f MB)", model_path, model_size + vec_size)
     return FakeNewsPredictor(model, vectorizer)
 
 
@@ -90,10 +106,12 @@ async def lifespan(app: FastAPI):
     app_config = load_config()
     try:
         predictor = initialize_model(app_config)
+        MODEL_LOADED.set(1)
         logger.info("Model initialized successfully.")
     except FileNotFoundError as e:
         logger.error("Model initialization failed: %s", e)
         predictor = None
+        MODEL_LOADED.set(0)
 
     # Initialize drift detector
     baseline_path = "data/processed/baseline_stats.json"
@@ -126,6 +144,30 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
+# Root Endpoint
+# ---------------------------------------------------------------------------
+
+@app.get("/", tags=["Root"])
+async def root():
+    """Root endpoint with API info and container ID for load-balance tracking."""
+    return {
+        "message": "Fake News Detection API",
+        "version": MODEL_VERSION,
+        "container_id": CONTAINER_ID,
+        "docs": "/docs",
+        "endpoints": {
+            "predict": "POST /predict",
+            "batch_predict": "POST /predict/batch",
+            "health": "GET /health",
+            "ready": "GET /ready",
+            "metrics": "GET /metrics",
+            "drift": "GET /drift",
+            "pipeline_info": "GET /pipeline/info",
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Health & Readiness Endpoints
 # ---------------------------------------------------------------------------
 
@@ -136,20 +178,20 @@ async def health_check():
         status="healthy" if predictor else "unhealthy",
         model_loaded=predictor is not None,
         vectorizer_loaded=predictor is not None and predictor.vectorizer is not None,
-        version="1.0.0",
+        version=MODEL_VERSION,
     )
 
 
 @app.get("/ready", response_model=HealthResponse, tags=["Health"])
 async def readiness_check():
-    """Readiness probe – returns 503 if model is not loaded."""
+    """Readiness probe - returns 503 if model is not loaded."""
     if predictor is None:
         raise HTTPException(status_code=503, detail="Model not loaded. Service is not ready.")
     return HealthResponse(
         status="ready",
         model_loaded=True,
         vectorizer_loaded=True,
-        version="1.0.0",
+        version=MODEL_VERSION,
     )
 
 
@@ -158,7 +200,7 @@ async def readiness_check():
 # ---------------------------------------------------------------------------
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
-async def predict(request: PredictionRequest):
+async def predict(request: PredictionRequest, req: Request):
     """
     Predict whether a news article is fake or real.
 
@@ -167,20 +209,29 @@ async def predict(request: PredictionRequest):
     if predictor is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
 
+    # Track source IP (A5 custom label requirement)
+    client_ip = req.client.host if req.client else "unknown"
+
     ACTIVE_REQUESTS.inc()
-    PREDICTION_REQUESTS.inc()
+    PREDICTION_REQUESTS.labels(model_version=MODEL_VERSION).inc()
+    REQUESTS_BY_SOURCE.labels(source_ip=client_ip).inc()
     start_time = time.time()
 
     try:
+        # Time preprocessing separately (Summary metric)
+        preprocess_start = time.time()
         result = predictor.predict(request.text)
+        preprocess_duration = time.time() - preprocess_start
+        TEXT_PROCESSING_TIME.observe(preprocess_duration)
 
         if result.get("error"):
-            PREDICTION_ERRORS.inc()
+            PREDICTION_ERRORS.labels(error_type="invalid_input").inc()
             raise HTTPException(status_code=400, detail=result["error"])
 
         # Record metrics
         latency = time.time() - start_time
-        PREDICTION_LATENCY.observe(latency)
+        PREDICTION_LATENCY.labels(endpoint="/predict").observe(latency)
+        INFERENCE_TIME_SUMMARY.observe(latency)
         PREDICTION_CLASS.labels(class_label=result["label"]).inc()
         INPUT_TEXT_LENGTH.observe(result["text_length"])
         PREDICTION_CONFIDENCE.observe(result["confidence"])
@@ -198,12 +249,13 @@ async def predict(request: PredictionRequest):
             confidence=result["confidence"],
             text_length=result["text_length"],
             word_count=result["word_count"],
+            container_id=CONTAINER_ID,
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        PREDICTION_ERRORS.inc()
+        PREDICTION_ERRORS.labels(error_type="server_error").inc()
         logger.exception("Prediction error: %s", e)
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
     finally:
@@ -211,20 +263,27 @@ async def predict(request: PredictionRequest):
 
 
 @app.post("/predict/batch", response_model=BatchPredictionResponse, tags=["Prediction"])
-async def predict_batch(request: BatchPredictionRequest):
+async def predict_batch(request: BatchPredictionRequest, req: Request):
     """Batch prediction endpoint for multiple texts."""
     if predictor is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
 
+    client_ip = req.client.host if req.client else "unknown"
+    REQUESTS_BY_SOURCE.labels(source_ip=client_ip).inc()
+
     results = []
     for text in request.texts:
+        start = time.time()
         result = predictor.predict(text)
+        INFERENCE_TIME_SUMMARY.observe(time.time() - start)
+
         results.append(PredictionResponse(
             prediction=result["prediction"],
             label=result["label"],
             confidence=result["confidence"],
             text_length=result["text_length"],
             word_count=result["word_count"],
+            container_id=CONTAINER_ID,
         ))
 
     return BatchPredictionResponse(predictions=results, count=len(results))
@@ -266,6 +325,7 @@ async def pipeline_info():
         "preprocessing": app_config.get("preprocessing", {}),
         "monitoring": app_config.get("monitoring", {}),
         "data_config": app_config.get("data", {}),
+        "container_id": CONTAINER_ID,
     }
 
 

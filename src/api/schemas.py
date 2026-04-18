@@ -20,6 +20,7 @@ class PredictionResponse(BaseModel):
     confidence: float = Field(..., description="Model confidence score")
     text_length: int = Field(..., description="Length of cleaned input text")
     word_count: int = Field(..., description="Word count of cleaned input text")
+    container_id: str = Field(default="", description="Container ID for load-balance tracking")
 
 
 class BatchPredictionRequest(BaseModel):

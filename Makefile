@@ -1,4 +1,4 @@
-.PHONY: setup train serve test docker-up docker-down clean lint
+.PHONY: setup train serve test docker-up docker-down clean lint airflow-init
 
 # ============================================================
 # Setup
@@ -25,6 +25,9 @@ dvc-run:
 dvc-dag:
 	dvc dag
 
+dvc-metrics:
+	dvc metrics show
+
 # ============================================================
 # Serving
 # ============================================================
@@ -32,10 +35,14 @@ serve:
 	uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 serve-frontend:
-	cd frontend && streamlit run app.py --server.port 8501
+	cd frontend && API_URL=http://localhost:8000 streamlit run app.py --server.port 8501
 
 mlflow-server:
 	mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db
+
+# MLflow Model Serving (A7 requirement)
+mlflow-serve:
+	mlflow models serve -m "models/best_model" --port 5001 --no-conda
 
 # ============================================================
 # Docker
@@ -48,6 +55,24 @@ docker-down:
 
 docker-logs:
 	docker-compose logs -f
+
+# ============================================================
+# Airflow (A6 requirement)
+# ============================================================
+setup-airflow:
+	pip install "apache-airflow==2.8.1" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.11.txt"
+
+airflow-init: setup-airflow
+	airflow db init
+	airflow users create --username admin --password admin \
+		--firstname Admin --lastname User --role Admin --email admin@example.com
+	airflow pools set ml_pipeline_pool 3 "Pool for ML pipeline tasks"
+
+airflow-web:
+	airflow webserver --port 8080
+
+airflow-scheduler:
+	airflow scheduler
 
 # ============================================================
 # Testing

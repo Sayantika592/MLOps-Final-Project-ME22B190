@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   # ==========================================================================
-  # MLflow Tracking Server
+  # MLflow Tracking Server (A7 requirement)
   # ==========================================================================
   mlflow:
     image: python:3.11-slim
@@ -66,7 +66,7 @@ services:
     restart: unless-stopped
 
   # ==========================================================================
-  # Prometheus (Metrics Collection)
+  # Prometheus (Metrics Collection — A5 requirement)
   # ==========================================================================
   prometheus:
     image: prom/prometheus:latest
@@ -75,16 +75,55 @@ services:
       - "9090:9090"
     volumes:
       - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./configs/alert_rules.yml:/etc/prometheus/alert_rules.yml
       - prometheus-data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
     networks:
       - fakenews-network
     restart: unless-stopped
 
   # ==========================================================================
-  # Grafana (Metrics Visualization)
+  # AlertManager (Email Alerts — A5 requirement)
+  # ==========================================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: fakenews-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Node Exporter (System Metrics — A5 requirement)
+  # ==========================================================================
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: fakenews-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Grafana (Dashboards — A5 requirement)
   # ==========================================================================
   grafana:
     image: grafana/grafana:latest
@@ -105,10 +144,72 @@ services:
       - fakenews-network
     restart: unless-stopped
 
+  # ==========================================================================
+  # Airflow (Pipeline Orchestration — A6 requirement)
+  # ==========================================================================
+  airflow-webserver:
+    image: apache/airflow:2.8.1-python3.11
+    container_name: fakenews-airflow-webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__SMTP__SMTP_HOST=sandbox.smtp.mailtrap.io
+      - AIRFLOW__SMTP__SMTP_PORT=2525
+      - AIRFLOW__SMTP__SMTP_USER=YOUR_MAILTRAP_USER
+      - AIRFLOW__SMTP__SMTP_PASSWORD=YOUR_MAILTRAP_PASS
+      - AIRFLOW__SMTP__SMTP_MAIL_FROM=airflow@fakenews.local
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./models:/opt/airflow/models
+      - ./configs:/opt/airflow/configs
+      - ./params.yaml:/opt/airflow/params.yaml
+      - airflow-data:/opt/airflow
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "airflow db init &&
+               airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
+               airflow pools set ml_pipeline_pool 3 'Pool for ML pipeline tasks' &&
+               airflow webserver --port 8080"
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1-python3.11
+    container_name: fakenews-airflow-scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./models:/opt/airflow/models
+      - ./configs:/opt/airflow/configs
+      - ./params.yaml:/opt/airflow/params.yaml
+      - airflow-data:/opt/airflow
+    command: airflow scheduler
+    depends_on:
+      - airflow-webserver
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
 volumes:
   mlflow-data:
   prometheus-data:
   grafana-data:
+  airflow-data:
 
 networks:
   fakenews-network:

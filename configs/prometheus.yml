@@ -1,13 +1,49 @@
+# Prometheus Configuration
+# Scrapes: FastAPI backend, node_exporter, MLflow
+# Alerting: Rules file + AlertManager integration
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# -----------------------------------------------------------------------
+# AlertManager connection (A5 requirement)
+# -----------------------------------------------------------------------
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# -----------------------------------------------------------------------
+# Alert & Recording Rules (A5 requirement)
+# -----------------------------------------------------------------------
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
+
+# -----------------------------------------------------------------------
+# Scrape Configurations
+# -----------------------------------------------------------------------
 scrape_configs:
+  # FastAPI backend metrics
   - job_name: "fastapi-backend"
     static_configs:
       - targets: ["backend:8000"]
     metrics_path: /metrics
+    scrape_interval: 10s
 
+  # Node Exporter: system-level CPU/RAM/Disk metrics (A5 requirement)
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # MLflow server
   - job_name: "mlflow"
     static_configs:
       - targets: ["mlflow:5000"]
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

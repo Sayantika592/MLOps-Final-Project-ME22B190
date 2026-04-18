@@ -1,0 +1,92 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: ./venv/bin/python -c "from src.data.ingest import load_data, 
+      load_config, compute_baseline_statistics; import json, os; config = 
+      load_config(); df = load_data(config['data']['raw_path']); stats = 
+      compute_baseline_statistics(df); os.makedirs('data/processed', 
+      exist_ok=True); df.to_csv('data/processed/ingested.csv', index=False); 
+      json.dump(stats, open('data/processed/baseline_stats.json','w'), 
+      indent=2);"
+    deps:
+    - path: configs/model_config.yaml
+      hash: md5
+      md5: 32117854fe0a64f8cd73f3ca0b5645a6
+      size: 1108
+    - path: data/raw/news.csv
+      hash: md5
+      md5: 0423900c49f9584476f8bad4891429ec
+      size: 116417694
+    - path: src/data/ingest.py
+      hash: md5
+      md5: ee4831cdd3743bd56ded04efe465fa2d
+      size: 4648
+    outs:
+    - path: data/processed/baseline_stats.json
+      hash: md5
+      md5: 75cc702f37e2c8832b2d5ba17005c110
+      size: 375
+    - path: data/processed/ingested.csv
+      hash: md5
+      md5: 0423900c49f9584476f8bad4891429ec
+      size: 116417694
+  preprocessing:
+    cmd: ./venv/bin/python -c "import pandas as pd; from src.data.preprocess 
+      import preprocess_dataframe; df = 
+      pd.read_csv('data/processed/ingested.csv'); df = preprocess_dataframe(df);
+      df.to_csv('data/processed/preprocessed.csv', index=False);"
+    deps:
+    - path: data/processed/ingested.csv
+      hash: md5
+      md5: 0423900c49f9584476f8bad4891429ec
+      size: 116417694
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: c8258548903d08e592c12946e2031c72
+      size: 5137
+    outs:
+    - path: data/processed/preprocessed.csv
+      hash: md5
+      md5: fca5961c7c612cc9145a17526f756ea4
+      size: 337885233
+  train:
+    cmd: ./venv/bin/python src/pipeline/run_pipeline.py --config 
+      configs/model_config.yaml
+    deps:
+    - path: configs/model_config.yaml
+      hash: md5
+      md5: 32117854fe0a64f8cd73f3ca0b5645a6
+      size: 1108
+    - path: data/raw/news.csv
+      hash: md5
+      md5: 0423900c49f9584476f8bad4891429ec
+      size: 116417694
+    - path: src/data/ingest.py
+      hash: md5
+      md5: ee4831cdd3743bd56ded04efe465fa2d
+      size: 4648
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: c8258548903d08e592c12946e2031c72
+      size: 5137
+    - path: src/model/train.py
+      hash: md5
+      md5: f401d9d42d18879413c9f9085b8c160a
+      size: 6886
+    - path: src/pipeline/run_pipeline.py
+      hash: md5
+      md5: 3b77dc4726ad8e635bce222e86a3437b
+      size: 9715
+    outs:
+    - path: models/best_model/metrics.json
+      hash: md5
+      md5: fdd395827977aca453888e5c610ee498
+      size: 137
+    - path: models/best_model/model.pkl
+      hash: md5
+      md5: 656860c39806d3b7d32b83619bd4b45b
+      size: 400974
+    - path: models/best_model/vectorizer.pkl
+      hash: md5
+      md5: 655dbc8a3e33ab874ce6e271426c8c2a
+      size: 2048920

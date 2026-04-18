@@ -1,10 +1,10 @@
 {
-  "total_duration": 70.78,
+  "total_duration": 113.39,
   "stages": {
     "data_ingestion": {
       "status": "completed",
-      "start": 1776371765.1149693,
-      "duration": 1.35,
+      "start": 1776514208.7891638,
+      "duration": 2.29,
       "details": {
         "rows": 44898,
         "columns": [
@@ -18,8 +18,8 @@
     },
     "baseline_statistics": {
       "status": "completed",
-      "start": 1776371766.4693782,
-      "duration": 0.04,
+      "start": 1776514211.0842564,
+      "duration": 0.07,
       "details": {
         "text_length": {
           "mean": 2469.1096930820972,
@@ -43,8 +43,8 @@
     },
     "preprocessing": {
       "status": "completed",
-      "start": 1776371766.5092533,
-      "duration": 14.75,
+      "start": 1776514211.1553805,
+      "duration": 23.06,
       "details": {
         "rows_after_cleaning": 44889,
         "features_created": [
@@ -57,8 +57,8 @@
     },
     "data_split": {
       "status": "completed",
-      "start": 1776371781.2567399,
-      "duration": 0.02,
+      "start": 1776514234.2179513,
+      "duration": 0.03,
       "details": {
         "train_size": 35911,
         "test_size": 8978
@@ -66,8 +66,8 @@
     },
     "feature_engineering": {
       "status": "completed",
-      "start": 1776371781.281098,
-      "duration": 54.28,
+      "start": 1776514234.2516158,
+      "duration": 87.41,
       "details": {
         "n_features": 50000,
         "vectorizer_path": "models/best_model/vectorizer.pkl"
@@ -75,19 +75,19 @@
     },
     "model_training": {
       "status": "completed",
-      "start": 1776371835.5649257,
-      "duration": 0.33,
+      "start": 1776514321.6651337,
+      "duration": 0.51,
       "details": {
         "algorithm": "passive_aggressive",
-        "accuracy": 0.9982178658944085,
-        "f1_score": 0.9982179020519728,
-        "precision": 0.9982183353034366,
-        "recall": 0.9982178658944085
+        "accuracy": 0.9979950991312097,
+        "f1_score": 0.9979951598467727,
+        "precision": 0.9979961137877791,
+        "recall": 0.9979950991312097
       }
     },
     "model_export": {
       "status": "completed",
-      "start": 1776371835.8908725,
+      "start": 1776514322.1794746,
       "duration": 0.0,
       "details": {
         "model_path": "models/best_model/model.pkl",
