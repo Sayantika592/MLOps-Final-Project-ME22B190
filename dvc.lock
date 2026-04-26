@@ -2,17 +2,14 @@ schema: '2.0'
 stages:
   data_ingestion:
     cmd: ./venv/bin/python -c "from src.data.ingest import load_data, 
-      load_config, compute_baseline_statistics; import json, os; config = 
-      load_config(); df = load_data(config['data']['raw_path']); stats = 
+      load_config, compute_baseline_statistics; import json, os, yaml; params = 
+      yaml.safe_load(open('params.yaml')); df = 
+      load_data(params['data']['raw_path']); stats = 
       compute_baseline_statistics(df); os.makedirs('data/processed', 
       exist_ok=True); df.to_csv('data/processed/ingested.csv', index=False); 
       json.dump(stats, open('data/processed/baseline_stats.json','w'), 
       indent=2);"
     deps:
-    - path: configs/model_config.yaml
-      hash: md5
-      md5: 32117854fe0a64f8cd73f3ca0b5645a6
-      size: 1108
     - path: data/raw/news.csv
       hash: md5
       md5: 0423900c49f9584476f8bad4891429ec
@@ -21,6 +18,9 @@ stages:
       hash: md5
       md5: ee4831cdd3743bd56ded04efe465fa2d
       size: 4648
+    params:
+      params.yaml:
+        data.raw_path: data/raw/news.csv
     outs:
     - path: data/processed/baseline_stats.json
       hash: md5
@@ -44,6 +44,15 @@ stages:
       hash: md5
       md5: c8258548903d08e592c12946e2031c72
       size: 5137
+    params:
+      params.yaml:
+        preprocessing:
+          max_features: 50000
+          ngram_range_min: 1
+          ngram_range_max: 2
+          min_df: 2
+          max_df: 0.95
+          stop_words: english
     outs:
     - path: data/processed/preprocessed.csv
       hash: md5
@@ -77,16 +86,37 @@ stages:
       hash: md5
       md5: 3b77dc4726ad8e635bce222e86a3437b
       size: 9715
+    params:
+      params.yaml:
+        data.random_state: 42
+        data.test_size: 0.2
+        model:
+          algorithm: passive_aggressive
+          passive_aggressive:
+            max_iter: 50
+            C: 1.0
+            tol: 0.001
+          logistic_regression:
+            max_iter: 1000
+            C: 1.0
+            solver: lbfgs
+          random_forest:
+            n_estimators: 100
+            max_depth: 50
+            random_state: 42
+        preprocessing.max_features: 50000
+        preprocessing.ngram_range_max: 2
+        preprocessing.ngram_range_min: 1
     outs:
     - path: models/best_model/metrics.json
       hash: md5
-      md5: fdd395827977aca453888e5c610ee498
+      md5: d1ec4df6bcd4beee55dff127fd44aca5
       size: 137
     - path: models/best_model/model.pkl
       hash: md5
-      md5: 656860c39806d3b7d32b83619bd4b45b
+      md5: 145027cfc4cccc166d3794eaf6f51094
       size: 400974
     - path: models/best_model/vectorizer.pkl
       hash: md5
-      md5: 655dbc8a3e33ab874ce6e271426c8c2a
+      md5: ad0538a2fca1ee7a08c05d589fc2dc3f
       size: 2048920

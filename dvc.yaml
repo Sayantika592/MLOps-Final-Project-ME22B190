@@ -1,15 +1,10 @@
 stages:
   data_ingestion:
-    cmd: python -c "
-      from src.data.ingest import load_data, load_config, compute_baseline_statistics;
-      import json, os, yaml;
-      params = yaml.safe_load(open('params.yaml'));
-      df = load_data(params['data']['raw_path']);
-      stats = compute_baseline_statistics(df);
-      os.makedirs('data/processed', exist_ok=True);
-      df.to_csv('data/processed/ingested.csv', index=False);
-      json.dump(stats, open('data/processed/baseline_stats.json','w'), indent=2);
-      "
+    cmd: ./venv/bin/python -c "from src.data.ingest import load_data, load_config, compute_baseline_statistics;
+      import json, os, yaml; params = yaml.safe_load(open('params.yaml'));
+      df = load_data(params['data']['raw_path']); stats = compute_baseline_statistics(df);
+      os.makedirs('data/processed', exist_ok=True); df.to_csv('data/processed/ingested.csv', index=False);
+      json.dump(stats, open('data/processed/baseline_stats.json','w'), indent=2);"
     deps:
       - data/raw/news.csv
       - src/data/ingest.py
@@ -18,15 +13,11 @@ stages:
     outs:
       - data/processed/ingested.csv
       - data/processed/baseline_stats.json
-
+ 
   preprocessing:
-    cmd: python -c "
-      import pandas as pd;
-      from src.data.preprocess import preprocess_dataframe;
-      df = pd.read_csv('data/processed/ingested.csv');
-      df = preprocess_dataframe(df);
-      df.to_csv('data/processed/preprocessed.csv', index=False);
-      "
+    cmd: ./venv/bin/python -c "import pandas as pd; from src.data.preprocess import preprocess_dataframe;
+      df = pd.read_csv('data/processed/ingested.csv'); df = preprocess_dataframe(df);
+      df.to_csv('data/processed/preprocessed.csv', index=False);"
     deps:
       - data/processed/ingested.csv
       - src/data/preprocess.py
@@ -34,9 +25,9 @@ stages:
       - preprocessing
     outs:
       - data/processed/preprocessed.csv
-
+ 
   train:
-    cmd: python src/pipeline/run_pipeline.py --config configs/model_config.yaml
+    cmd: ./venv/bin/python src/pipeline/run_pipeline.py --config configs/model_config.yaml
     deps:
       - data/raw/news.csv
       - src/pipeline/run_pipeline.py
@@ -54,7 +45,6 @@ stages:
     outs:
       - models/best_model/model.pkl
       - models/best_model/vectorizer.pkl
-      - models/best_model/metrics.json
     metrics:
       - models/best_model/metrics.json:
           cache: false
