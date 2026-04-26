@@ -29,7 +29,7 @@ stages:
   train:
     cmd: ./venv/bin/python src/pipeline/run_pipeline.py --config configs/model_config.yaml
     deps:
-      - data/raw/news.csv
+      - data/processed/preprocessed.csv
       - src/pipeline/run_pipeline.py
       - src/data/ingest.py
       - src/data/preprocess.py

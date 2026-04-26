@@ -12,8 +12,8 @@ stages:
     deps:
     - path: data/raw/news.csv
       hash: md5
-      md5: 0423900c49f9584476f8bad4891429ec
-      size: 116417694
+      md5: 8a790216ab9e8cb09aacdfc22ad93378
+      size: 122695132
     - path: src/data/ingest.py
       hash: md5
       md5: ee4831cdd3743bd56ded04efe465fa2d
@@ -24,12 +24,12 @@ stages:
     outs:
     - path: data/processed/baseline_stats.json
       hash: md5
-      md5: 75cc702f37e2c8832b2d5ba17005c110
-      size: 375
+      md5: 6d9d90ca5d2b136740ed09860053ecd1
+      size: 370
     - path: data/processed/ingested.csv
       hash: md5
-      md5: 0423900c49f9584476f8bad4891429ec
-      size: 116417694
+      md5: 8a790216ab9e8cb09aacdfc22ad93378
+      size: 122695132
   preprocessing:
     cmd: ./venv/bin/python -c "import pandas as pd; from src.data.preprocess 
       import preprocess_dataframe; df = 
@@ -38,8 +38,8 @@ stages:
     deps:
     - path: data/processed/ingested.csv
       hash: md5
-      md5: 0423900c49f9584476f8bad4891429ec
-      size: 116417694
+      md5: 8a790216ab9e8cb09aacdfc22ad93378
+      size: 122695132
     - path: src/data/preprocess.py
       hash: md5
       md5: c8258548903d08e592c12946e2031c72
@@ -56,8 +56,8 @@ stages:
     outs:
     - path: data/processed/preprocessed.csv
       hash: md5
-      md5: fca5961c7c612cc9145a17526f756ea4
-      size: 337885233
+      md5: 4bb65c3d6aa05d161595a0d24a744e41
+      size: 356144921
   train:
     cmd: ./venv/bin/python src/pipeline/run_pipeline.py --config 
       configs/model_config.yaml
@@ -68,8 +68,8 @@ stages:
       size: 1108
     - path: data/raw/news.csv
       hash: md5
-      md5: 0423900c49f9584476f8bad4891429ec
-      size: 116417694
+      md5: 8a790216ab9e8cb09aacdfc22ad93378
+      size: 122695132
     - path: src/data/ingest.py
       hash: md5
       md5: ee4831cdd3743bd56ded04efe465fa2d
@@ -110,13 +110,13 @@ stages:
     outs:
     - path: models/best_model/metrics.json
       hash: md5
-      md5: d1ec4df6bcd4beee55dff127fd44aca5
+      md5: 5cc53dab05b2379bdb2250fd94ba8a63
       size: 137
     - path: models/best_model/model.pkl
       hash: md5
-      md5: 145027cfc4cccc166d3794eaf6f51094
+      md5: a1797002399c8d078b27f9591bacc514
       size: 400974
     - path: models/best_model/vectorizer.pkl
       hash: md5
-      md5: ad0538a2fca1ee7a08c05d589fc2dc3f
-      size: 2048920
+      md5: d82fccb446716226ea3ee2d42274188a
+      size: 2047964

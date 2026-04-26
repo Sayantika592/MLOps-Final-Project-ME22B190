@@ -1,12 +1,12 @@
 {
-  "total_duration": 113.39,
+  "total_duration": 115.65,
   "stages": {
     "data_ingestion": {
       "status": "completed",
-      "start": 1776514208.7891638,
-      "duration": 2.29,
+      "start": 1777236077.0122526,
+      "duration": 2.06,
       "details": {
-        "rows": 44898,
+        "rows": 47246,
         "columns": [
           "title",
           "text",
@@ -18,35 +18,35 @@
     },
     "baseline_statistics": {
       "status": "completed",
-      "start": 1776514211.0842564,
-      "duration": 0.07,
+      "start": 1777236079.0752811,
+      "duration": 0.06,
       "details": {
         "text_length": {
-          "mean": 2469.1096930820972,
-          "std": 2171.6170908337167,
-          "median": 2186.0,
+          "mean": 2472.9494348727935,
+          "std": 2179.06611169765,
+          "median": 2185.0,
           "min": 1.0,
           "max": 51794.0
         },
         "title_length": {
-          "mean": 80.11171989843646,
-          "std": 25.379685157014137,
-          "median": 73.0,
+          "mean": 80.78889218134869,
+          "std": 25.6507682033396,
+          "median": 74.0,
           "min": 8.0,
           "max": 286.0
         },
         "label_distribution": {
-          "1": 0.5229854336496058,
-          "0": 0.47701456635039424
+          "1": 0.5466917834314016,
+          "0": 0.4533082165685984
         }
       }
     },
     "preprocessing": {
       "status": "completed",
-      "start": 1776514211.1553805,
-      "duration": 23.06,
+      "start": 1777236079.1349125,
+      "duration": 23.28,
       "details": {
-        "rows_after_cleaning": 44889,
+        "rows_after_cleaning": 47235,
         "features_created": [
           "content",
           "text_length",
@@ -57,17 +57,17 @@
     },
     "data_split": {
       "status": "completed",
-      "start": 1776514234.2179513,
-      "duration": 0.03,
+      "start": 1777236102.4168265,
+      "duration": 0.04,
       "details": {
-        "train_size": 35911,
-        "test_size": 8978
+        "train_size": 37788,
+        "test_size": 9447
       }
     },
     "feature_engineering": {
       "status": "completed",
-      "start": 1776514234.2516158,
-      "duration": 87.41,
+      "start": 1777236102.4581873,
+      "duration": 89.69,
       "details": {
         "n_features": 50000,
         "vectorizer_path": "models/best_model/vectorizer.pkl"
@@ -75,19 +75,19 @@
     },
     "model_training": {
       "status": "completed",
-      "start": 1776514321.6651337,
+      "start": 1777236192.1495867,
       "duration": 0.51,
       "details": {
         "algorithm": "passive_aggressive",
-        "accuracy": 0.9979950991312097,
-        "f1_score": 0.9979951598467727,
-        "precision": 0.9979961137877791,
-        "recall": 0.9979950991312097
+        "accuracy": 0.9984121943474119,
+        "f1_score": 0.9984122416182075,
+        "precision": 0.9984124919957494,
+        "recall": 0.9984121943474119
       }
     },
     "model_export": {
       "status": "completed",
-      "start": 1776514322.1794746,
+      "start": 1777236192.662159,
       "duration": 0.0,
       "details": {
         "model_path": "models/best_model/model.pkl",
