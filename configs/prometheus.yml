@@ -5,24 +5,18 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-
-# -----------------------------------------------------------------------
+  
 # AlertManager connection (A5 requirement)
-# -----------------------------------------------------------------------
 alerting:
   alertmanagers:
     - static_configs:
         - targets: ["alertmanager:9093"]
 
-# -----------------------------------------------------------------------
-# Alert & Recording Rules (A5 requirement)
-# -----------------------------------------------------------------------
+# Alert & Recording Rules
 rule_files:
   - "/etc/prometheus/alert_rules.yml"
 
-# -----------------------------------------------------------------------
 # Scrape Configurations
-# -----------------------------------------------------------------------
 scrape_configs:
   # FastAPI backend metrics
   - job_name: "fastapi-backend"
