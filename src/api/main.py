@@ -49,9 +49,8 @@ from src.monitoring.drift import DriftDetector
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
 # Global state
-# ---------------------------------------------------------------------------
+
 predictor: FakeNewsPredictor = None
 drift_detector: DriftDetector = None
 app_config: dict = {}
@@ -93,10 +92,7 @@ def initialize_model(config: dict) -> FakeNewsPredictor:
     logger.info("Model and vectorizer loaded from %s (%.1f MB)", model_path, model_size + vec_size)
     return FakeNewsPredictor(model, vectorizer)
 
-
-# ---------------------------------------------------------------------------
 # App lifecycle
-# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -122,9 +118,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down application.")
 
 
-# ---------------------------------------------------------------------------
 # FastAPI App
-# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="Fake News Detection API",
@@ -143,9 +137,7 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
 # Root Endpoint
-# ---------------------------------------------------------------------------
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -166,10 +158,7 @@ async def root():
         },
     }
 
-
-# ---------------------------------------------------------------------------
 # Health & Readiness Endpoints
-# ---------------------------------------------------------------------------
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
@@ -195,9 +184,7 @@ async def readiness_check():
     )
 
 
-# ---------------------------------------------------------------------------
 # Prediction Endpoints
-# ---------------------------------------------------------------------------
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
 async def predict(request: PredictionRequest, req: Request):
@@ -289,9 +276,7 @@ async def predict_batch(request: BatchPredictionRequest, req: Request):
     return BatchPredictionResponse(predictions=results, count=len(results))
 
 
-# ---------------------------------------------------------------------------
 # Monitoring Endpoints
-# ---------------------------------------------------------------------------
 
 @app.get("/metrics", tags=["Monitoring"])
 async def metrics():
@@ -313,9 +298,7 @@ async def get_drift_status():
     return DriftResponse(**result)
 
 
-# ---------------------------------------------------------------------------
 # Pipeline Info Endpoint
-# ---------------------------------------------------------------------------
 
 @app.get("/pipeline/info", tags=["Pipeline"])
 async def pipeline_info():
@@ -329,9 +312,7 @@ async def pipeline_info():
     }
 
 
-# ---------------------------------------------------------------------------
 # Entry point
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn
