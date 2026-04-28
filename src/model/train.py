@@ -27,9 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Model factory
-# ---------------------------------------------------------------------------
 
 MODEL_REGISTRY = {
     "passive_aggressive": PassiveAggressiveClassifier,
@@ -57,10 +55,7 @@ def get_model(algorithm: str, hyperparameters: dict):
     logger.info("Created model: %s with params %s", algorithm, params)
     return model
 
-
-# ---------------------------------------------------------------------------
 # Training
-# ---------------------------------------------------------------------------
 
 def train_model(model, X_train, y_train):
     """
@@ -79,10 +74,7 @@ def train_model(model, X_train, y_train):
     logger.info("Training complete.")
     return model
 
-
-# ---------------------------------------------------------------------------
 # Evaluation
-# ---------------------------------------------------------------------------
 
 def evaluate_model(model, X_test, y_test) -> dict:
     """
@@ -116,10 +108,8 @@ def evaluate_model(model, X_test, y_test) -> dict:
 
     return metrics
 
-
-# ---------------------------------------------------------------------------
 # MLflow tracking
-# ---------------------------------------------------------------------------
+
 
 def train_with_mlflow(
     model,
@@ -199,10 +189,8 @@ def train_with_mlflow(
         metrics["run_id"] = run_id
         return metrics
 
-
-# ---------------------------------------------------------------------------
 # Save / Load
-# ---------------------------------------------------------------------------
+
 
 def save_model(model, path: str) -> None:
     """Save model to disk using pickle."""
