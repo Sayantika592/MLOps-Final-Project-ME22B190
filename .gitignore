@@ -12,6 +12,7 @@ venv/
 airflow-venv/
 env/
 .env
+test_env/
 
 # IDE
 .vscode/
@@ -20,6 +21,8 @@ env/
 *.swo
 
 # Data (tracked by DVC)
+data/archive.zip
+data/News_dataset/*.csv
 data/raw/*.csv
 data/processed/
 
