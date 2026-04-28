@@ -32,7 +32,7 @@ model:
       random_state: 42
 
 mlflow:
-  tracking_uri: "http://localhost:5000"
+  tracking_uri: "http://localhost:5001"
   experiment_name: "fake-news-detection"
   model_name: "fake-news-classifier"
 

@@ -9,6 +9,7 @@ build/
 
 # Virtual environments
 venv/
+airflow-venv/
 env/
 .env
 
@@ -25,9 +26,12 @@ data/processed/
 # Models (tracked by DVC)
 models/best_model/*.pkl
 
-# MLflow
+# MLflow & Temp
 mlruns/
+mlartifacts/
 mlflow.db
+tmp/
+cache/
 
 # Docker
 *.log
@@ -41,4 +45,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-
+# Reports & Docs
+*.pdf
+*.docx

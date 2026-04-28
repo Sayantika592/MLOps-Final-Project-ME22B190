@@ -21,6 +21,16 @@ groups:
   # -----------------------------------------------------------------------
   - name: failure_alerts
     rules:
+      # TARGET DOWN: Scrape target is unreachable
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.job }} is DOWN"
+          description: "Cannot reach {{ $labels.instance }}"
+
       # HIGH ERROR RATE: More than 5% errors over 5 minutes
       - alert: HighErrorRate
         expr: prediction:error_rate:5m > 0.05

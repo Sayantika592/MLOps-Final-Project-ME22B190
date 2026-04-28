@@ -36,13 +36,6 @@ scrape_configs:
     static_configs:
       - targets: ["node-exporter:9100"]
 
-  # MLflow server
-  - job_name: "mlflow"
-    static_configs:
-      - targets: ["mlflow:5000"]
-    metrics_path: /metrics
-    scrape_interval: 30s
-
   # Prometheus self-monitoring
   - job_name: "prometheus"
     static_configs:

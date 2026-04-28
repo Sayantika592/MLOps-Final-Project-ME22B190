@@ -7,8 +7,8 @@ global:
   # Replace with your SMTP settings (Mailtrap, SendGrid, Gmail, etc.)
   smtp_smarthost: "sandbox.smtp.mailtrap.io:2525"
   smtp_from: "alerts@fakenews-detector.local"
-  smtp_auth_username: "YOUR_MAILTRAP_USERNAME"
-  smtp_auth_password: "YOUR_MAILTRAP_PASSWORD"
+  smtp_auth_username: "03d947f0b2b667"
+  smtp_auth_password: "5b499655df4b6a"
   smtp_require_tls: true
 
 # -----------------------------------------------------------------------

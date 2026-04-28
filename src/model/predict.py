@@ -4,6 +4,7 @@ Prediction Module
 Provides inference functionality for the fake news classifier.
 """
 
+import math
 import logging
 import numpy as np
 from src.data.preprocess import clean_text
@@ -56,14 +57,24 @@ class FakeNewsPredictor:
         prediction = int(self.model.predict(features)[0])
         label = self.label_map.get(prediction, "UNKNOWN")
 
-        # Confidence via decision function (if available)
-        confidence = 0.0
-        if hasattr(self.model, "decision_function"):
-            score = self.model.decision_function(features)[0]
-            confidence = float(abs(score))
-        elif hasattr(self.model, "predict_proba"):
+        # Confidence as probability (always 0.0 to 1.0)
+        confidence = 0.5  # default = uncertain
+
+        if hasattr(self.model, "predict_proba"):
+            # Models with predict_proba (LogisticRegression, RandomForest, SGD with log_loss)
             proba = self.model.predict_proba(features)[0]
-            confidence = float(max(proba))
+            # Confidence = probability of the PREDICTED class
+            confidence = float(proba[prediction])
+        elif hasattr(self.model, "decision_function"):
+            # Models with only decision_function (SVM, SGD with hinge)
+            score = self.model.decision_function(features)[0]
+            # Convert raw score to probability via sigmoid
+            sigmoid = 1.0 / (1.0 + math.exp(-float(score)))
+            # sigmoid > 0.5 means class 1 (FAKE), < 0.5 means class 0 (REAL)
+            if prediction == 1:
+                confidence = sigmoid
+            else:
+                confidence = 1.0 - sigmoid
 
         result = {
             "prediction": prediction,

@@ -1,3 +1,9 @@
 /config.local
 /tmp
 /cache
+
+state
+lock
+config.local
+updater
+cache

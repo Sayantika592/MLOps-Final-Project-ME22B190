@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile.backend
     container_name: fakenews-backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./models:/app/models
       - ./data/processed:/app/data/processed
@@ -53,12 +53,12 @@ services:
     image: python:3.11-slim
     container_name: fakenews-mlflow
     command: >
-      bash -c "pip install mlflow==2.9.2 --quiet &&
+      bash -c "pip install mlflow --upgrade --quiet &&
                mlflow server --host 0.0.0.0 --port 5000
                --backend-store-uri sqlite:///mlflow.db
                --default-artifact-root /mlflow/artifacts"
     ports:
-      - "5000:5000"
+      - "5001:5000"
     volumes:
       - mlflow-data:/mlflow
     networks:
@@ -129,7 +129,7 @@ services:
     image: grafana/grafana:latest
     container_name: fakenews-grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -145,23 +145,56 @@ services:
     restart: unless-stopped
 
   # ==========================================================================
-  # Airflow (Pipeline Orchestration — A6 requirement)
+  # PostgreSQL (Airflow Metadata Database)
+  # ==========================================================================
+  postgres:
+    image: postgres:13
+    container_name: fakenews-postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    command: postgres -c max_connections=200
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Airflow Webserver (A6 requirement)
   # ==========================================================================
   airflow-webserver:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.2.0-python3.11
     container_name: fakenews-airflow-webserver
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE=10
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW=20
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE=1800
       - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
       - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
       - AIRFLOW__SMTP__SMTP_HOST=sandbox.smtp.mailtrap.io
       - AIRFLOW__SMTP__SMTP_PORT=2525
-      - AIRFLOW__SMTP__SMTP_USER=YOUR_MAILTRAP_USER
-      - AIRFLOW__SMTP__SMTP_PASSWORD=YOUR_MAILTRAP_PASS
+      - AIRFLOW__SMTP__SMTP_USER=03d947f0b2b667
+      - AIRFLOW__SMTP__SMTP_PASSWORD=5b499655df4b6a
       - AIRFLOW__SMTP__SMTP_MAIL_FROM=airflow@fakenews.local
+      - AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      - _AIRFLOW_DB_UPGRADE=true
+      - _AIRFLOW_WWW_USER_CREATE=true
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas scikit-learn mlflow pyyaml
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
@@ -169,27 +202,42 @@ services:
       - ./models:/opt/airflow/models
       - ./configs:/opt/airflow/configs
       - ./params.yaml:/opt/airflow/params.yaml
-      - airflow-data:/opt/airflow
+      - airflow-logs:/opt/airflow/logs
     ports:
       - "8080:8080"
     command: >
-      bash -c "airflow db init &&
-               airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
-               airflow pools set ml_pipeline_pool 3 'Pool for ML pipeline tasks' &&
-               airflow webserver --port 8080"
+      bash -c "airflow db migrate &&
+               (airflow connections add fs_default --conn-type fs --conn-extra '{\"path\": \"/opt/airflow\"}' || true) &&
+               (airflow pools set ml_pipeline_pool 3 'Pool for ML pipeline tasks' || true) &&
+               airflow api-server --port 8080"
+    depends_on:
+      - postgres
     networks:
       - fakenews-network
     restart: unless-stopped
 
+  # ==========================================================================
+  # Airflow Scheduler
+  # ==========================================================================
   airflow-scheduler:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.2.0-python3.11
     container_name: fakenews-airflow-scheduler
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE=10
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW=20
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE=1800
       - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__SMTP__SMTP_HOST=sandbox.smtp.mailtrap.io
+      - AIRFLOW__SMTP__SMTP_PORT=2525
+      - AIRFLOW__SMTP__SMTP_USER=03d947f0b2b667
+      - AIRFLOW__SMTP__SMTP_PASSWORD=5b499655df4b6a
+      - AIRFLOW__SMTP__SMTP_MAIL_FROM=airflow@fakenews.local
+      - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-webserver:8080
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas scikit-learn mlflow pyyaml
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
@@ -197,8 +245,40 @@ services:
       - ./models:/opt/airflow/models
       - ./configs:/opt/airflow/configs
       - ./params.yaml:/opt/airflow/params.yaml
-      - airflow-data:/opt/airflow
+      - airflow-logs:/opt/airflow/logs
     command: airflow scheduler
+    depends_on:
+      - airflow-webserver
+    networks:
+      - fakenews-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Airflow DAG Processor
+  # ==========================================================================
+  airflow-dag-processor:
+    image: apache/airflow:3.2.0-python3.11
+    container_name: fakenews-airflow-dag-processor
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE=10
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW=20
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE=1800
+      - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-webserver:8080
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas scikit-learn mlflow pyyaml
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./models:/opt/airflow/models
+      - ./configs:/opt/airflow/configs
+      - ./params.yaml:/opt/airflow/params.yaml
+      - airflow-logs:/opt/airflow/logs
+    command: airflow dag-processor
     depends_on:
       - airflow-webserver
     networks:
@@ -209,7 +289,8 @@ volumes:
   mlflow-data:
   prometheus-data:
   grafana-data:
-  airflow-data:
+  airflow-logs:
+  postgres-data:
 
 networks:
   fakenews-network:
