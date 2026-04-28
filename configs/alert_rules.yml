@@ -1,10 +1,8 @@
 # Prometheus Alerting & Recording Rules
-# Per A5: Failures, Resource Overuse, Anomalies
 
 groups:
-  # -----------------------------------------------------------------------
   # Recording Rules (pre-compute expensive queries)
-  # -----------------------------------------------------------------------
+  
   - name: recording_rules
     rules:
       - record: prediction:error_rate:5m
@@ -15,10 +13,9 @@ groups:
 
       - record: prediction:request_rate:5m
         expr: rate(prediction_requests_total[5m])
-
-  # -----------------------------------------------------------------------
+        
   # Alerting Rules
-  # -----------------------------------------------------------------------
+  
   - name: failure_alerts
     rules:
       # TARGET DOWN: Scrape target is unreachable
