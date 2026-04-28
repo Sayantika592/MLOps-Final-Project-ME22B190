@@ -3,7 +3,7 @@ Airflow DAG: Fake News Detection ML Pipeline
 =============================================
 Orchestrates the end-to-end ML pipeline using Apache Airflow.
 
-Features (per A6 requirements):
+Features:
 - FileSensor: Watches for new dataset files in data/raw/
 - Dry Pipeline Alert: Email when no data detected within timeout
 - Worker Pool: Limits concurrency for CPU-heavy tasks (pool size 3)
@@ -25,9 +25,7 @@ from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.standard.sensors.filesystem import FileSensor
 from airflow.utils.trigger_rule import TriggerRule
 
-# ---------------------------------------------------------------------------
 # SMTP Configuration (Mailtrap)
-# ---------------------------------------------------------------------------
 SMTP_HOST = "sandbox.smtp.mailtrap.io"
 SMTP_PORT = 2525
 SMTP_USER = "03d947f0b2b667"
@@ -35,9 +33,7 @@ SMTP_PASS = "5b499655df4b6a"
 SMTP_FROM = "airflow@fakenews.local"
 SMTP_TO = "team@example.com"
 
-# ---------------------------------------------------------------------------
-# Email Helper (same pattern as A6 web_scraper assignment)
-# ---------------------------------------------------------------------------
+# Email Helper
 def send_email(subject, html_content):
     """Send email via SMTP using smtplib."""
     msg = MIMEMultipart("alternative")
@@ -52,9 +48,7 @@ def send_email(subject, html_content):
         server.sendmail(SMTP_FROM, SMTP_TO, msg.as_string())
     logging.info("Email sent: %s", subject)
 
-# ---------------------------------------------------------------------------
 # Task Functions
-# ---------------------------------------------------------------------------
 def task_data_ingestion(**kwargs):
     """Stage 1: Load and validate raw CSV data."""
     import pandas as pd
@@ -240,9 +234,7 @@ def task_validate_model(**kwargs):
     return {"status": "validated", "accuracy": accuracy, "f1_score": f1}
 
 
-# ---------------------------------------------------------------------------
 # Email Task Functions
-# ---------------------------------------------------------------------------
 def send_success(**kwargs):
     send_email(
         "[Fake News Pipeline] Training Completed Successfully",
@@ -292,9 +284,7 @@ def send_dry_alert(**kwargs):
     )
 
 
-# ---------------------------------------------------------------------------
-# Default DAG arguments with retry logic (A6 requirement)
-# ---------------------------------------------------------------------------
+# Default DAG arguments with retry logic
 default_args = {
     "owner": "fake-news-team",
     "depends_on_past": False,
@@ -307,9 +297,7 @@ default_args = {
     "start_date": datetime(2026, 4, 1),
 }
 
-# ---------------------------------------------------------------------------
 # DAG Definition
-# ---------------------------------------------------------------------------
 with DAG(
     dag_id="fake_news_ml_pipeline",
     default_args=default_args,
