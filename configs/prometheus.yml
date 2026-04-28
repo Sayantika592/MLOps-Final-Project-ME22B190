@@ -6,7 +6,7 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   
-# AlertManager connection (A5 requirement)
+# AlertManager connection
 alerting:
   alertmanagers:
     - static_configs:
@@ -25,7 +25,7 @@ scrape_configs:
     metrics_path: /metrics
     scrape_interval: 10s
 
-  # Node Exporter: system-level CPU/RAM/Disk metrics (A5 requirement)
+  # Node Exporter: system-level CPU/RAM/Disk metrics
   - job_name: "node-exporter"
     static_configs:
       - targets: ["node-exporter:9100"]
