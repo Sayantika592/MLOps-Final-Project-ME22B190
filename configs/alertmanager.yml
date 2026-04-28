@@ -1,5 +1,4 @@
 # AlertManager Configuration
-# Per A5: Email notifications via webhook + silence for maintenance
 
 global:
   resolve_timeout: 5m
@@ -10,10 +9,8 @@ global:
   smtp_auth_username: "03d947f0b2b667"
   smtp_auth_password: "5b499655df4b6a"
   smtp_require_tls: true
-
-# -----------------------------------------------------------------------
+  
 # Routes: Define how alerts are grouped and routed
-# -----------------------------------------------------------------------
 route:
   group_by: ["alertname", "severity"]
   group_wait: 30s
@@ -36,9 +33,7 @@ route:
       group_wait: 1m
       repeat_interval: 4h
 
-# -----------------------------------------------------------------------
 # Receivers: Email notification targets
-# -----------------------------------------------------------------------
 receivers:
   - name: "email-team"
     email_configs:
@@ -62,19 +57,15 @@ receivers:
         headers:
           Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
 
-# -----------------------------------------------------------------------
 # Inhibition Rules: Suppress less severe alerts when critical fires
-# -----------------------------------------------------------------------
 inhibit_rules:
   - source_match:
       severity: "critical"
     target_match:
       severity: "warning"
     equal: ["alertname"]
-
-# -----------------------------------------------------------------------
-# Silence Configuration (A5 requirement: maintenance windows)
-# -----------------------------------------------------------------------
+    
+# Silence Configuration
 # Silences are managed via the AlertManager UI at http://localhost:9093/#/silences
 # To create a silence for maintenance:
 #   1. Go to http://localhost:9093/#/silences
