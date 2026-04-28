@@ -76,9 +76,7 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
     config = load_config(config_path)
     status = PipelineStatus()
 
-    # -----------------------------------------------------------------------
     # Stage 1: Data Ingestion
-    # -----------------------------------------------------------------------
     status.start_stage("data_ingestion")
     try:
         df = load_data(config["data"]["raw_path"])
@@ -90,10 +88,8 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         status.fail_stage("data_ingestion", str(e))
         logger.exception("Pipeline aborted at data ingestion.")
         return status
-
-    # -----------------------------------------------------------------------
+        
     # Stage 2: Baseline Statistics (for drift detection)
-    # -----------------------------------------------------------------------
     status.start_stage("baseline_statistics")
     try:
         baseline_stats = compute_baseline_statistics(df)
@@ -105,9 +101,7 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         status.fail_stage("baseline_statistics", str(e))
         logger.warning("Baseline computation failed, continuing without drift baselines.")
 
-    # -----------------------------------------------------------------------
     # Stage 3: Data Preprocessing
-    # -----------------------------------------------------------------------
     status.start_stage("preprocessing")
     try:
         df = preprocess_dataframe(df)
@@ -120,9 +114,7 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         logger.exception("Pipeline aborted at preprocessing.")
         return status
 
-    # -----------------------------------------------------------------------
     # Stage 4: Train/Test Split
-    # -----------------------------------------------------------------------
     status.start_stage("data_split")
     try:
         X_train, X_test, y_train, y_test = split_data(
@@ -138,9 +130,8 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         status.fail_stage("data_split", str(e))
         return status
 
-    # -----------------------------------------------------------------------
     # Stage 5: Feature Engineering (TF-IDF)
-    # -----------------------------------------------------------------------
+
     status.start_stage("feature_engineering")
     try:
         prep_config = config["preprocessing"]
@@ -167,9 +158,7 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         status.fail_stage("feature_engineering", str(e))
         return status
 
-    # -----------------------------------------------------------------------
     # Stage 6: Model Training & Evaluation
-    # -----------------------------------------------------------------------
     status.start_stage("model_training")
     try:
         algorithm = config["model"]["algorithm"]
@@ -204,10 +193,9 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
     except Exception as e:
         status.fail_stage("model_training", str(e))
         return status
-
-    # -----------------------------------------------------------------------
+        
     # Stage 7: Model Export
-    # -----------------------------------------------------------------------
+
     status.start_stage("model_export")
     try:
         model_path = "models/best_model/model.pkl"
@@ -230,9 +218,7 @@ def run_pipeline(config_path: str = "configs/model_config.yaml", use_mlflow: boo
         status.fail_stage("model_export", str(e))
         return status
 
-    # -----------------------------------------------------------------------
     # Pipeline Summary
-    # -----------------------------------------------------------------------
     summary = status.summary()
     logger.info("=" * 60)
     logger.info("PIPELINE %s in %.2fs", summary["overall_status"].upper(), summary["total_duration"])
