@@ -87,7 +87,7 @@ pytest tests/test_api.py -v
 
 ---
 
-## 4. Test Results (Actual Execution)
+## 4. Test Cases (Actual Execution)
 
 - Total tests collected: **33**  
 - Passed: **33**  
