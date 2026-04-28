@@ -1,6 +1,5 @@
-# ============================================================
+
 # Fake News Detection - Model & Pipeline Configuration
-# ============================================================
 
 data:
   raw_path: "data/raw/news.csv"
