@@ -3,7 +3,7 @@ FastAPI Application
 ===================
 Main API server for the Fake News Detection system.
 Exposes prediction, health, drift, and metrics endpoints.
-Includes container_id in responses for Docker Swarm load-balance tracking (A2).
+Includes container_id in responses for Docker Swarm load-balance tracking.
 """
 
 import os
