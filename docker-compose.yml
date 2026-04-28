@@ -1,9 +1,9 @@
 version: "3.8"
 
 services:
-  # ==========================================================================
+ 
   # Backend API (FastAPI + ML Model)
-  # ==========================================================================
+
   backend:
     build:
       context: .
@@ -27,9 +27,9 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
+
   # Frontend (Streamlit UI)
-  # ==========================================================================
+
   frontend:
     build:
       context: .
@@ -46,9 +46,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # MLflow Tracking Server (A7 requirement)
-  # ==========================================================================
+  # MLflow Tracking Server 
+
   mlflow:
     image: python:3.11-slim
     container_name: fakenews-mlflow
@@ -65,9 +64,9 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # Prometheus (Metrics Collection — A5 requirement)
-  # ==========================================================================
+
+  # Prometheus (Metrics Collection)
+
   prometheus:
     image: prom/prometheus:latest
     container_name: fakenews-prometheus
@@ -85,9 +84,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # AlertManager (Email Alerts — A5 requirement)
-  # ==========================================================================
+  # AlertManager (Email Alerts)
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: fakenews-alertmanager
@@ -101,9 +99,9 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # Node Exporter (System Metrics — A5 requirement)
-  # ==========================================================================
+
+  # Node Exporter (System Metrics)
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: fakenews-node-exporter
@@ -122,9 +120,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # Grafana (Dashboards — A5 requirement)
-  # ==========================================================================
+  # Grafana (Dashboards)
+
   grafana:
     image: grafana/grafana:latest
     container_name: fakenews-grafana
@@ -144,9 +141,9 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
+
   # PostgreSQL (Airflow Metadata Database)
-  # ==========================================================================
+
   postgres:
     image: postgres:13
     container_name: fakenews-postgres
@@ -168,9 +165,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
-  # Airflow Webserver (A6 requirement)
-  # ==========================================================================
+  # Airflow Webserver 
+
   airflow-webserver:
     image: apache/airflow:3.2.0-python3.11
     container_name: fakenews-airflow-webserver
@@ -216,9 +212,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
   # Airflow Scheduler
-  # ==========================================================================
+
   airflow-scheduler:
     image: apache/airflow:3.2.0-python3.11
     container_name: fakenews-airflow-scheduler
@@ -253,9 +248,8 @@ services:
       - fakenews-network
     restart: unless-stopped
 
-  # ==========================================================================
   # Airflow DAG Processor
-  # ==========================================================================
+
   airflow-dag-processor:
     image: apache/airflow:3.2.0-python3.11
     container_name: fakenews-airflow-dag-processor
