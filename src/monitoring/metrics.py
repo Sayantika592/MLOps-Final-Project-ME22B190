@@ -18,9 +18,7 @@ from prometheus_client import (
 )
 
 
-# ---------------------------------------------------------------------------
 # Application Info
-# ---------------------------------------------------------------------------
 
 APP_INFO = Info("app", "Fake News Detection application info")
 APP_INFO.info({
@@ -29,9 +27,7 @@ APP_INFO.info({
     "framework": "fastapi",
 })
 
-# ---------------------------------------------------------------------------
 # COUNTER Metrics
-# ---------------------------------------------------------------------------
 
 # Total prediction requests (with custom label: model_version)
 PREDICTION_REQUESTS = Counter(
@@ -61,9 +57,7 @@ REQUESTS_BY_SOURCE = Counter(
     ["source_ip"],
 )
 
-# ---------------------------------------------------------------------------
 # GAUGE Metrics
-# ---------------------------------------------------------------------------
 
 # Data drift gauge
 DATA_DRIFT_SCORE = Gauge(
@@ -89,9 +83,7 @@ MODEL_MEMORY_MB = Gauge(
     "Estimated memory usage of the loaded model in MB",
 )
 
-# ---------------------------------------------------------------------------
 # HISTOGRAM Metrics
-# ---------------------------------------------------------------------------
 
 # Prediction latency histogram
 PREDICTION_LATENCY = Histogram(
@@ -115,9 +107,7 @@ PREDICTION_CONFIDENCE = Histogram(
     buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 )
 
-# ---------------------------------------------------------------------------
 # SUMMARY Metrics (generates _sum and _total suffixes)
-# ---------------------------------------------------------------------------
 
 INFERENCE_TIME_SUMMARY = Summary(
     "inference_time_seconds",
@@ -129,10 +119,7 @@ TEXT_PROCESSING_TIME = Summary(
     "Summary of text preprocessing time (provides _sum and _count)",
 )
 
-
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def get_metrics():
     """Generate latest Prometheus metrics in exposition format."""
