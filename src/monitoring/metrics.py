@@ -4,7 +4,7 @@ Monitoring Metrics Module
 Prometheus instrumentation for the Fake News Detection API.
 Tracks prediction counts, latency, errors, data characteristics.
 
-Metric Types Used (as per A5 requirements):
+Metric Types Used:
 - Counter: Monotonically increasing values (total requests, errors)
 - Gauge: Values that go up and down (drift score, active requests)
 - Histogram: Distribution of values in buckets (latency, text length)
